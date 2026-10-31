@@ -6,6 +6,8 @@ You load an image in a browser UI, choose a grid size and color count, calibrate
 
 > **Heads up:** this automates mouse and keyboard input. Check the rules of any game you use it with before running it.
 
+**Tested only with Roblox on macOS.** It has not been tested with other games, drawing apps (such as Paint), or other programs, and may not work with them.
+
 ## How it works
 
 1. **Load** an image (file, URL, or data URL) through the local web UI.
@@ -75,4 +77,11 @@ To check that keyboard detection works:
 
 ## License
 
-No license has been chosen yet.
+Copyright (c) 2026 Aaron Chen. Licensed under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/) (see [LICENSE](LICENSE)). In plain terms:
+
+- **You can** use, copy, modify, and share this project.
+- **You must credit** Aaron Chen and link to this repository when you share it or any fork of it.
+- **You can't sell it** or use it for commercial purposes.
+- **Derivative works** must be shared under the same license.
+
+Because the license restricts commercial use, this is source-available rather than OSI-approved "open source." It is public and free to use, modify, and share under these terms.
