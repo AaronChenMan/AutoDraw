@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoDraw</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f13; --panel: #16181f; --panel2: #1d2029; --line: #2a2e3a;
+    --text: #e8eaf0; --muted: #8a90a2; --accent: #7c6cff; --accent2: #a594ff;
+    --ok: #3ecf8e; --warn: #f5a524; --bad: #f25f5c; --r: 14px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 Manrope, system-ui, sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; padding: 18px 28px; border-bottom: 1px solid var(--line); }
+  .logo { width: 30px; height: 30px; border-radius: 9px; background: conic-gradient(from 200deg, #ff6b6b, #ffd93d, #3ecf8e, #4d96ff, #a594ff, #ff6b6b); }
+  header h1 { font-size: 17px; margin: 0; font-weight: 700; letter-spacing: -.01em; }
+  header span { color: var(--muted); font-size: 13px; }
+  #status-pill { margin-left: auto; padding: 5px 12px; border-radius: 99px; background: var(--panel2); border: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  #status-pill.drawing { color: var(--ok); border-color: #2c5e47; }
+  main { display: grid; grid-template-columns: 380px 1fr; gap: 20px; padding: 20px 28px 28px; max-width: 1280px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 16px; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; margin-bottom: 16px; }
+  .card h2 { margin: 0 0 14px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .step { width: 20px; height: 20px; border-radius: 6px; background: var(--panel2); border: 1px solid var(--line); display: grid; place-items: center; font-size: 11px; color: var(--text); }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 6px; }
+  input[type=text], input[type=number] { width: 100%; background: var(--panel2); border: 1px solid var(--line); color: var(--text); border-radius: 9px; padding: 9px 11px; font: inherit; outline: none; }
+  input:focus { border-color: var(--accent); }
+  .row { display: flex; gap: 8px; align-items: center; }
+  button { font: inherit; font-weight: 600; border: 1px solid var(--line); background: var(--panel2); color: var(--text); padding: 9px 14px; border-radius: 9px; cursor: pointer; transition: .15s; white-space: nowrap; }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover:not(:disabled) { background: var(--accent2); }
+  button.danger { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .drop { border: 1.5px dashed var(--line); border-radius: 11px; padding: 18px; text-align: center; color: var(--muted); cursor: pointer; transition: .15s; }
+  .drop.over, .drop:hover { border-color: var(--accent); color: var(--text); }
+  .or { text-align: center; color: var(--muted); font-size: 12px; margin: 10px 0; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .val { font-family: 'JetBrains Mono', monospace; color: var(--accent2); font-size: 13px; }
+  .pick { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 10px 12px; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; }
+  .pick b { font-weight: 500; font-size: 13px; }
+  .pick small { display: block; color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .pick.set small { color: var(--ok); }
+  .hint { color: var(--muted); font-size: 12px; margin: 0 0 12px; }
+  .stage { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); min-height: 420px; display: grid; place-items: center; padding: 20px;
+    background-image: linear-gradient(45deg, #1a1c23 25%, transparent 25%), linear-gradient(-45deg, #1a1c23 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1a1c23 75%), linear-gradient(-45deg, transparent 75%, #1a1c23 75%);
+    background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0; }
+  .stage img { max-width: 100%; image-rendering: pixelated; border-radius: 6px; box-shadow: 0 10px 40px #0008; }
+  .stage .empty { color: var(--muted); text-align: center; }
+  .meta { display: flex; gap: 18px; color: var(--muted); font-size: 12px; margin: 12px 2px; flex-wrap: wrap; }
+  .meta b { color: var(--text); font-weight: 600; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+  .sw { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 9px; background: var(--panel2); border: 1px solid var(--line); cursor: pointer; user-select: none; transition: .15s; }
+  .sw i { width: 22px; height: 22px; border-radius: 6px; border: 1px solid #fff2; flex: none; }
+  .sw span { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .sw.skip { opacity: .35; text-decoration: line-through; }
+  .sw.active { border-color: var(--ok); box-shadow: 0 0 0 2px #3ecf8e33; }
+  .progress { height: 8px; background: var(--panel2); border-radius: 99px; overflow: hidden; margin: 12px 0 8px; }
+  .progress div { height: 100%; width: 100%; transform-origin: left; transform: scaleX(0); background: linear-gradient(90deg, var(--accent), var(--ok)); transition: transform .3s; }
+  #msg { color: var(--muted); font-size: 13px; min-height: 20px; }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--bad); color: #fff; padding: 10px 16px; border-radius: 10px; display: none; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"></div>
+  <h1>AutoDraw</h1><span>for Roblox spray paint</span>
+  <div id="status-pill">Idle</div>
+</header>
+
+<main>
+  <section>
+    <div class="card">
+      <h2><span class="step">1</span>Image</h2>
+      <div class="drop" id="drop">Drop an image or <u>browse</u><input type="file" id="file" accept="image/*" hidden></div>
+      <div class="or">or paste a URL</div>
+      <div class="row"><input type="text" id="url" placeholder="https://…/image.png"><button id="loadUrl">Load</button></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="step">2</span>Calibrate</h2>
+      <p class="hint">Click Pick — Roblox comes to the front and the image follows your cursor. <b>+</b>/<b>−</b> resize it, click or <b>Enter</b> to confirm, <b>Esc</b> cancels.</p>
+      <div class="pick" data-k="region"><div><b>Canvas position</b><small>not set</small></div><button>Pick</button></div>
+      <div class="pick" data-k="hex"><div><b>Hex color box</b><small>not set</small></div><button>Pick</button></div>
+      <div class="hint" id="pickingMsg" hidden style="color:var(--accent2)">Positioning over Roblox… <b>+</b>/<b>−</b> resize, click or <b>Enter</b> to confirm, <b>Esc</b> cancel.</div>
+    </div>
+
+    <div class="card">
+      <h2><span class="step">3</span>Settings</h2>
+      <label>Colors <span class="val" id="colorsVal">8</span></label>
+      <input type="range" id="colors" min="2" max="32" value="8">
+      <label>Brush spacing (screen px per row) <span class="val" id="spacingVal">4</span></label>
+      <input type="range" id="spacing" min="1" max="20" value="4">
+      <label>Drag speed <span class="val" id="speedVal">4</span></label>
+      <input type="range" id="speed" min="1" max="10" value="4">
+    </div>
+  </section>
+
+  <section>
+    <div class="stage" id="stage"><div class="empty">Load an image to see the preview</div></div>
+    <div class="meta" id="meta"></div>
+    <div class="card">
+      <h2>Layers <span style="text-transform:none;letter-spacing:0;font-weight:400">— click a color to skip it</span></h2>
+      <div class="swatches" id="swatches"><span class="hint">No layers yet</span></div>
+      <div class="progress"><div id="bar"></div></div>
+      <div class="row" style="justify-content:space-between">
+        <div id="msg">Move the mouse any time while drawing to stop.</div>
+        <button class="primary" id="go" disabled>Start drawing</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const pos = JSON.parse(localStorageGet('pos') || '{}');
+const skip = new Set();
+let layers = [], drawing = false, loaded = false;
+
+function localStorageGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
+function localStorageSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
+
+async function api(path, body) {
+  const r = await fetch(path, body ? { method: 'POST', body: JSON.stringify(body) } : {});
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || 'Request failed');
+  return j;
+}
+function toast(m) { const t = $('#toast'); t.textContent = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 4000); }
+
+// ---- image loading
+async function loadSrc(src) {
+  try { await api('/api/load', { src }); loaded = true; process(); } catch (e) { toast(e.message); }
+}
+$('#drop').onclick = () => $('#file').click();
+$('#file').onchange = e => e.target.files[0] && readFile(e.target.files[0]);
+['dragover', 'dragleave', 'drop'].forEach(ev => $('#drop').addEventListener(ev, e => {
+  e.preventDefault(); $('#drop').classList.toggle('over', ev === 'dragover');
+  if (ev === 'drop' && e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
+}));
+function readFile(f) { const r = new FileReader(); r.onload = () => loadSrc(r.result); r.readAsDataURL(f); }
+$('#loadUrl').onclick = () => $('#url').value.trim() && loadSrc($('#url').value.trim());
+$('#url').onkeydown = e => e.key === 'Enter' && $('#loadUrl').click();
+
+// ---- calibration
+function renderPicks() {
+  document.querySelectorAll('.pick').forEach(el => {
+    const k = el.dataset.k, p = pos[k];
+    el.classList.toggle('set', !!p);
+    el.querySelector('small').textContent = !p ? 'not set' : k === 'region' ? `${p.w}×${p.h} @ ${p.cx},${p.cy}` : `x ${p.x}, y ${p.y}`;
+  });
+  updateGo();
+}
+document.querySelectorAll('.pick button').forEach(b => b.onclick = async () => {
+  const k = b.closest('.pick').dataset.k;
+  if (k === 'region' && !loaded) return toast('Load an image first');
+  document.querySelectorAll('.pick button').forEach(x => x.disabled = true);
+  $('#pickingMsg').hidden = false;
+  try { await api('/api/start_pick', { kind: k }); }
+  catch (e) { toast(e.message); $('#pickingMsg').hidden = true; document.querySelectorAll('.pick button').forEach(x => x.disabled = false); return; }
+  await pollPick(k);
+});
+async function pollPick(k) {
+  const st = await api('/api/pick_status').catch(() => null);
+  if (st && st.picking) return setTimeout(() => pollPick(k), 250);
+  $('#pickingMsg').hidden = true;
+  document.querySelectorAll('.pick button').forEach(x => x.disabled = false);
+  if (st) {
+    pos[k] = k === 'region' ? st.region : st.hex;
+    localStorageSet('pos', JSON.stringify(pos));
+  }
+  renderPicks(); process();
+}
+
+// ---- settings
+function grid() {
+  const s = +$('#spacing').value;
+  if (!pos.region) return { gw: Math.round(400 / s), gh: Math.round(400 / s) };
+  return { gw: Math.max(1, Math.floor(pos.region.w / s)), gh: Math.max(1, Math.floor(pos.region.h / s)) };
+}
+let timer;
+['colors', 'spacing', 'speed'].forEach(id => $('#' + id).oninput = () => {
+  $('#' + id + 'Val').textContent = $('#' + id).value;
+  if (id !== 'speed') { clearTimeout(timer); timer = setTimeout(process, 200); }
+});
+
+async function process() {
+  if (!loaded) return;
+  try {
+    const g = grid();
+    const r = await api('/api/process', { colors: +$('#colors').value, ...g });
+    $('#stage').innerHTML = `<img src="${r.preview}">`;
+    layers = r.layers; skip.clear();
+    const strokes = layers.reduce((a, l) => a + l.strokes, 0);
+    $('#meta').innerHTML = `<span>Grid <b>${r.size[0]}×${r.size[1]}</b></span><span>Colors <b>${layers.length}</b></span><span>Strokes <b>${strokes}</b></span>` +
+      (pos.region ? '' : '<span style="color:var(--warn)">Pick the canvas center for true size</span>');
+    renderSwatches();
+  } catch (e) { toast(e.message); }
+}
+function renderSwatches() {
+  $('#swatches').innerHTML = '';
+  layers.forEach(l => {
+    const el = document.createElement('div');
+    el.className = 'sw' + (skip.has(l.hex) ? ' skip' : '');
+    el.dataset.hex = l.hex;
+    el.innerHTML = `<i style="background:#${l.hex}"></i><span>#${l.hex}</span>`;
+    el.title = `${l.strokes} strokes`;
+    el.onclick = () => { if (drawing) return; skip.has(l.hex) ? skip.delete(l.hex) : skip.add(l.hex); renderSwatches(); };
+    $('#swatches').appendChild(el);
+  });
+  updateGo();
+}
+function updateGo() {
+  const ready = layers.length && pos.region && pos.hex;
+  $('#go').disabled = !drawing && !ready;
+}
+
+// ---- drawing
+$('#go').onclick = async () => {
+  if (drawing) { await api('/api/stop', {}); return; }
+  const s = +$('#spacing').value;
+  try {
+    await api('/api/draw', {
+      region: pos.region,
+      hex: [pos.hex.x, pos.hex.y], spacing: s, speed: +$('#speed').value, skip: [...skip],
+    });
+    poll();
+  } catch (e) { toast(e.message); }
+};
+async function poll() {
+  const st = await api('/api/status');
+  drawing = st.state === 'drawing';
+  $('#status-pill').textContent = drawing ? `Drawing ${st.done}/${st.total}` : 'Idle';
+  $('#status-pill').className = drawing ? 'drawing' : '';
+  $('#bar').style.transform = `scaleX(${st.total ? st.done / st.total : 0})`;
+  $('#msg').textContent = st.msg || 'Move the mouse any time while drawing to stop.';
+  $('#go').textContent = drawing ? 'Stop' : 'Start drawing';
+  $('#go').className = drawing ? 'danger' : 'primary';
+  document.querySelectorAll('.sw').forEach(el => el.classList.toggle('active', el.dataset.hex === st.layer));
+  updateGo();
+  if (drawing) setTimeout(poll, 400);
+}
+
+renderPicks();
+poll();
+</script>
+</body>
+</html>
